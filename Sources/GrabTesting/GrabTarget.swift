@@ -22,15 +22,33 @@
     /// When there are any, the shot is cut from a screen capture around the
     /// union of their frames and the window's, instead.
     public let extras: [XCUIElement]
+    /// Whether the window should have the runner's `windowSize`: `false`
+    /// for a window the app doesn't size, such as an About panel or an
+    /// alert.
+    public let checksWindowSize: Bool
+    /// Whether to move the pointer off the window before capturing, so no
+    /// hover or tooltip shows: `false` for an open menu, which closes its
+    /// submenu when the pointer leaves it.
+    public let parksPointer: Bool
 
     /// A target.
     ///
     /// - Parameters:
     ///   - window: The window to capture.
     ///   - extras: Elements outside it to include.
-    public init(window: XCUIElement, extras: [XCUIElement] = []) {
+    ///   - checksWindowSize: Whether the window should have the runner's
+    ///     `windowSize`.
+    ///   - parksPointer: Whether to move the pointer off the window first.
+    public init(
+      window: XCUIElement,
+      extras: [XCUIElement] = [],
+      checksWindowSize: Bool = true,
+      parksPointer: Bool = true
+    ) {
       self.window = window
       self.extras = extras
+      self.checksWindowSize = checksWindowSize
+      self.parksPointer = parksPointer
     }
   }
 #endif

@@ -53,12 +53,6 @@
       self.windowSize = windowSize
     }
 
-    private static func deviceAppearance(
-      _ appearance: GrabAppearance
-    ) -> XCUIDevice.Appearance {
-      appearance == .dark ? .dark : .light
-    }
-
     private static func image(of target: GrabTarget) throws -> GrabImage {
       let window = target.window
       let shot = try GrabImage(
@@ -101,8 +95,8 @@
     /// Each appearance is a fresh launch. The Mac's appearance is switched
     /// too (so menus and sheets match the window) while the app is still
     /// frontmost, before it's terminated, since XCTest then waits for the
-    /// frontmost app to idle; the original appearance is restored after the
-    /// last capture.
+    /// frontmost app to idle. The Mac's appearance from before the run's
+    /// first capture is restored after the last.
     ///
     /// - Parameters:
     ///   - screen: The screen to capture.
@@ -111,9 +105,8 @@
       guard let first = appearances.first else {
         return
       }
-      let device = XCUIDevice.shared
-      let original = device.appearance
-      device.appearance = Self.deviceAppearance(first)
+      let original = Self.originalAppearance
+      XCUIDevice.shared.appearance = Self.deviceAppearance(first)
       var images: [GrabImage] = []
       for (index, appearance) in appearances.enumerated() {
         let next =
@@ -166,13 +159,15 @@
       app.activate()
       let target = try screen.drive(app)
       let window = target.window
-      if let windowSize, !window.waitForSize(windowSize) {
+      if let windowSize, target.checksWindowSize, !window.waitForSize(windowSize) {
         Self.note(
           "\(screen.baseName): window is \(window.frame.size), not \(windowSize)"
             + " (Stage Manager, or a display smaller than the window?)"
         )
       }
-      window.parkPointer()
+      if target.parksPointer {
+        window.parkPointer()
+      }
       window.waitForStableFrame()
       for extra in target.extras {
         extra.waitForStableFrame()

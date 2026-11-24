@@ -52,4 +52,13 @@ internal struct GrabNamingTests {
       try GrabFixture(name: "nope", subdirectory: "Fixtures").text(in: .module)
     }
   }
+
+  @Test("Errors name what they waited for")
+  internal func errorDescriptions() {
+    #expect(
+      GrabError.elementNotFound("About panel").localizedDescription
+        == "Timed out waiting for About panel."
+    )
+    #expect(GrabError.missingFixture("sample").localizedDescription.contains("sample"))
+  }
 }
