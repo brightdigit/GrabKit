@@ -9,18 +9,20 @@
 public import Foundation
 import OSLog
 
-/// Whether a Screenshots build may run in screenshot mode.
+/// How a launch runs: live, in screenshot mode, or not at all.
 ///
-/// Only the app's `Main.swift` asks, under `#if SCREENSHOTS`, before it
-/// touches any data. A Screenshots build either runs on demo data or quits:
-/// it never falls back to the user's real data.
+/// Every launch decides at runtime, before it touches any data; there is no
+/// compile gate. Only a Screenshots build (a `.Screenshots` bundle ID, with
+/// its own container and defaults) can run on demo data, and it never falls
+/// back to live: it either runs in screenshot mode or quits. Any other build
+/// runs live and ignores the screenshot flag.
 public enum GrabLaunchDecision: Equatable, Sendable {
+  /// Run normally, on the user's real data.
+  case live
   /// Run in screenshot mode on demo data.
   case screenshots
-  /// Quit: the launch didn't ask for screenshot mode.
-  case refuseMissingArgument
-  /// Quit: the build doesn't carry a `.Screenshots` bundle ID.
-  case refuseBundleIdentifier
+  /// Quit: a Screenshots build launched without screenshot mode.
+  case refuse
 
   /// Decides a launch.
   ///
@@ -34,33 +36,33 @@ public enum GrabLaunchDecision: Equatable, Sendable {
     launchArguments: GrabLaunchArguments
   ) {
     guard bundleIdentifier?.isGrabBundleIdentifier == true else {
-      self = .refuseBundleIdentifier
+      self = .live
       return
     }
-    self =
-      launchArguments.requestsScreenshotMode(arguments)
-      ? .screenshots : .refuseMissingArgument
+    self = launchArguments.requestsScreenshotMode(arguments) ? .screenshots : .refuse
   }
 
-  /// Returns if this launch may run in screenshot mode; otherwise logs a
-  /// fault and quits.
+  /// Whether this launch runs in screenshot mode; quits first if it must
+  /// refuse.
   ///
-  /// It quits with `exit`, not a trap: a crash leaves a "quit unexpectedly"
-  /// dialog on screen, and in the next screenshots.
-  public func requireScreenshotMode() {
-    guard self != .screenshots else {
-      return
-    }
-    let logger = Logger(
-      subsystem: Bundle.main.bundleIdentifier ?? "GrabKit",
-      category: "Screenshots"
-    )
+  /// Call it before the app reads any data. It quits with `exit`, not a
+  /// trap: a crash leaves a "quit unexpectedly" dialog on screen, and in the
+  /// next screenshots.
+  ///
+  /// - Returns: `true` for screenshot mode, `false` to run live.
+  public func startsScreenshotMode() -> Bool {
     switch self {
-    case .refuseBundleIdentifier:
-      logger.fault("A Screenshots build needs a bundle ID ending in .Screenshots.")
-    default:
+    case .live:
+      return false
+    case .screenshots:
+      return true
+    case .refuse:
+      let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "GrabKit",
+        category: "Screenshots"
+      )
       logger.fault("A Screenshots build runs only in screenshot mode.")
+      exit(EXIT_FAILURE)
     }
-    exit(EXIT_FAILURE)
   }
 }

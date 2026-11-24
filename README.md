@@ -10,29 +10,22 @@ Requires macOS 27 and Swift 6.4.
 
 ## The convention
 
-1. **One `Screenshots` build configuration** (Debug-based). In it, the app target alone sets `SWIFT_ACTIVE_COMPILATION_CONDITIONS = $(inherited) DEBUG SCREENSHOTS`.
-2. **Screenshot code lives in the app's own demo package target** and is reached only from `Main.swift` under `#if SCREENSHOTS`. Never gate it with `#if DEBUG` inside a package: Xcode builds local packages with Release settings in a configuration whose name doesn't contain "Debug".
-3. **Mock data, never restricted entitlements.** The Screenshots build is `<bundle ID>.Screenshots`, signed ad hoc, and keeps only entitlements that need no provisioning profile. It gets its own container, defaults and privacy permissions, and XCUITest can't kill the user's running copy.
-4. **Fail closed.** A Screenshots build launched without `-<Prefix>Screenshots YES` quits before it touches anything.
+1. **Mock data, never real services.** Screenshot mode fakes everything with real state behind it, so the Screenshots build needs no restricted entitlement.
+2. **Its own bundle ID.** A `Screenshots` build configuration (Debug-based) builds `<bundle ID>.Screenshots`, signed ad hoc, with its own container, defaults and privacy permissions, and XCUITest can't kill the user's running copy.
+3. **Decided at runtime, failing closed.** Every launch asks `GrabLaunchDecision` before it reads any data. A Screenshots build launched with `-<Prefix>Screenshots YES` runs on demo data. A Screenshots build without it quits. Any other build runs live and ignores the flag. There is no compile gate.
+4. **No `#if DEBUG` in a package** for anything the Screenshots build needs: Xcode builds local packages with Release settings in a configuration whose name doesn't contain "Debug".
 
 The full convention, with the reasons and per-app notes, is the `mac-app-screenshots` skill in [brightdigit/skills](https://github.com/brightdigit/skills).
 
 ## Usage
 
-App, `Main.swift`:
+App, at launch, before anything reads data:
 
 ```swift
-#if SCREENSHOTS
-  import GrabSupport
-#endif
+import GrabSupport
 
-@main
-struct Main: MyApp {
-  #if SCREENSHOTS
-    init() {
-      GrabLaunchDecision(launchArguments: .init(prefix: "My")).requireScreenshotMode()
-    }
-  #endif
+if GrabLaunchDecision(launchArguments: .init(prefix: "My")).startsScreenshotMode() {
+  // Build the app on demo data.
 }
 ```
 

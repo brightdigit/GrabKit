@@ -4,18 +4,16 @@ The app side of screenshot mode.
 
 ## Overview
 
-An app links GrabSupport only from its demo target, and reaches that target
-only from `Main.swift` under `#if SCREENSHOTS`, a compilation condition set on
-the app target in its `Screenshots` build configuration. Debug and Release
-builds never reference it.
+An app links GrabSupport from its demo target. Every launch asks
+``GrabLaunchDecision`` before it reads any data: a Screenshots build (a
+`.Screenshots` bundle ID, signed ad hoc, with its own container and
+defaults) launched with `-<Prefix>Screenshots YES` runs on demo data, a
+Screenshots build without it quits, and any other build runs live and
+ignores the flag. There is no compile gate.
 
-Never gate screenshot code with `#if DEBUG` in a package: Xcode builds local
-packages with Release settings in a configuration whose name doesn't contain
-"Debug".
-
-A Screenshots build carries a `.Screenshots` bundle ID, is signed ad hoc, and
-runs only on demo data. ``GrabLaunchDecision`` makes it quit unless it was
-launched with `-<Prefix>Screenshots YES`.
+Never put screenshot code behind `#if DEBUG` in a package: Xcode builds
+local packages with Release settings in a configuration whose name doesn't
+contain "Debug", so the Screenshots build would compile it out.
 
 ## Topics
 

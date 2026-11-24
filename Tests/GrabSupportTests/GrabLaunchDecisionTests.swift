@@ -28,21 +28,20 @@ internal struct GrabLaunchDecisionTests {
   @Test("The .Screenshots bundle ID with the flag runs in screenshot mode")
   internal func screenshots() {
     #expect(Self.decide(Self.requested, Self.screenshotsID) == .screenshots)
+    #expect(Self.decide(Self.requested, Self.screenshotsID).startsScreenshotMode())
   }
 
   @Test("The .Screenshots bundle ID without the flag quits")
-  internal func missingArgument() {
-    #expect(Self.decide(["App"], Self.screenshotsID) == .refuseMissingArgument)
-    #expect(
-      Self.decide(["App", "-TCScreenshots", "NO"], Self.screenshotsID)
-        == .refuseMissingArgument
-    )
+  internal func refuse() {
+    #expect(Self.decide(["App"], Self.screenshotsID) == .refuse)
+    #expect(Self.decide(["App", "-TCScreenshots", "NO"], Self.screenshotsID) == .refuse)
   }
 
-  @Test("Any other bundle ID quits, flag or not")
-  internal func wrongBundleIdentifier() {
-    #expect(Self.decide(Self.requested, "com.example.App") == .refuseBundleIdentifier)
-    #expect(Self.decide(["App"], "com.example.App") == .refuseBundleIdentifier)
-    #expect(Self.decide(Self.requested, nil) == .refuseBundleIdentifier)
+  @Test("Any other bundle ID runs live and ignores the flag")
+  internal func live() {
+    #expect(Self.decide(Self.requested, "com.example.App") == .live)
+    #expect(Self.decide(["App"], "com.example.App") == .live)
+    #expect(Self.decide(Self.requested, nil) == .live)
+    #expect(!Self.decide(Self.requested, "com.example.App").startsScreenshotMode())
   }
 }
