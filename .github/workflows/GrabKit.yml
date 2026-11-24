@@ -1,0 +1,32 @@
+name: GrabKit
+
+# Pull requests only: a PR's commits never run twice.
+on:
+  pull_request:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: swift test
+    # GitHub's Xcode 27 image (macOS 27, arm64).
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v6
+      - name: Toolchain
+        run: xcodebuild -version && swift --version
+      - name: swift test
+        run: swift test
+
+  lint:
+    name: Lint
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v6
+      - uses: jdx/mise-action@v4
+      - name: Lint
+        run: ./Scripts/lint.sh
+        env:
+          CI: "1"
