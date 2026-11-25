@@ -18,7 +18,7 @@ let package = Package(
   products: [
     // The app side of screenshot mode: launch arguments, appearance, the
     // fail-closed launch decision and the fixed window size. Linked only by
-    // an app's demo target, which the app reaches under `#if SCREENSHOTS`.
+    // an app's demo target, which the app asks at every launch.
     .library(name: "GrabSupport", targets: ["GrabSupport"]),
     // The UI test side: drive, capture, crop, detect light or dark, name
     // and attach.

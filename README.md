@@ -17,6 +17,16 @@ Requires macOS 27 and Swift 6.4.
 
 The full convention, with the reasons and per-app notes, is the `mac-app-screenshots` skill in [brightdigit/skills](https://github.com/brightdigit/skills).
 
+## Installation
+
+Add GrabKit to the app's package as a URL dependency:
+
+```swift
+.package(url: "https://github.com/brightdigit/GrabKit.git", branch: "main"),
+```
+
+Link `GrabSupport` from the app's demo target and `GrabTesting` from the screenshot UI tests' library.
+
 ## Usage
 
 App, at launch, before anything reads data:
@@ -60,10 +70,10 @@ final class ScreenshotTests: XCTestCase {
 }
 ```
 
-Export:
+Export, from the package that depends on GrabKit (SwiftPM builds `grab-export` from its resolved checkout):
 
 ```sh
-swift run --package-path <GrabKit> grab-export build/screenshots.xcresult build/screenshots
+swift run --package-path Packages/MyApp -c release grab-export build/screenshots.xcresult build/screenshots
 ```
 
 ## Development
