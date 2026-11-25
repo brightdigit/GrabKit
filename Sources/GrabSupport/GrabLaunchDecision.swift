@@ -7,7 +7,10 @@
 //
 
 public import Foundation
-import OSLog
+
+#if canImport(OSLog)
+  import OSLog
+#endif
 
 /// How a launch runs: live, in screenshot mode, or not at all.
 ///
@@ -42,6 +45,18 @@ public enum GrabLaunchDecision: Equatable, Sendable {
     self = launchArguments.requestsScreenshotMode(arguments) ? .screenshots : .refuse
   }
 
+  private static func reportRefusal(_ message: String) {
+    #if canImport(OSLog)
+      let logger = Logger(
+        subsystem: Bundle.main.bundleIdentifier ?? "GrabKit",
+        category: "Screenshots"
+      )
+      logger.fault("\(message, privacy: .public)")
+    #else
+      FileHandle.standardError.write(Data("\(message)\n".utf8))
+    #endif
+  }
+
   /// Whether this launch runs in screenshot mode; quits first if it must
   /// refuse.
   ///
@@ -57,11 +72,7 @@ public enum GrabLaunchDecision: Equatable, Sendable {
     case .screenshots:
       return true
     case .refuse:
-      let logger = Logger(
-        subsystem: Bundle.main.bundleIdentifier ?? "GrabKit",
-        category: "Screenshots"
-      )
-      logger.fault("A Screenshots build runs only in screenshot mode.")
+      Self.reportRefusal("A Screenshots build runs only in screenshot mode.")
       exit(EXIT_FAILURE)
     }
   }

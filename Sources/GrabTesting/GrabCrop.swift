@@ -6,7 +6,12 @@
 //  Licensed under the MIT License. See LICENSE.
 //
 
-public import CoreGraphics
+#if canImport(CoreGraphics)
+  public import CoreGraphics
+#else
+  // swift-corelibs-foundation defines CGFloat, CGSize and CGRect on Linux.
+  public import Foundation
+#endif
 
 /// Works out the pixel rectangle to cut from a screen capture.
 public enum GrabCrop {

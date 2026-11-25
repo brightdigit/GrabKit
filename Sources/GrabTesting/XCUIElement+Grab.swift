@@ -143,9 +143,14 @@
 
     /// Moves the pointer just right of this element (a window), so no hover
     /// effect or tooltip shows in the capture.
+    ///
+    /// Does nothing on tvOS, visionOS and watchOS, which have no pointer to
+    /// hover with.
     @MainActor
     public func parkPointer() {
-      coordinate(withNormalizedOffset: CGVector(dx: 1.02, dy: 0.5)).hover()
+      #if os(macOS) || os(iOS)
+        coordinate(withNormalizedOffset: CGVector(dx: 1.02, dy: 0.5)).hover()
+      #endif
     }
   }
 #endif

@@ -6,8 +6,11 @@
 //  Licensed under the MIT License. See LICENSE.
 //
 
-public import CoreGraphics
 public import GrabSupport
+
+#if canImport(CoreGraphics)
+  public import CoreGraphics
+#endif
 
 /// Tells light from dark by a captured image's average brightness.
 public enum GrabAppearanceDetector {
@@ -25,45 +28,47 @@ public enum GrabAppearanceDetector {
     averageLuminance >= lightThreshold ? .light : .dark
   }
 
-  /// The appearance of `image`, from its average luminance.
-  ///
-  /// - Parameter image: The capture.
-  /// - Returns: Its appearance.
-  public static func appearance(of image: CGImage) -> GrabAppearance {
-    appearance(averageLuminance: averageLuminance(of: image))
-  }
+  #if canImport(CoreGraphics)
+    /// The appearance of `image`, from its average luminance.
+    ///
+    /// - Parameter image: The capture.
+    /// - Returns: Its appearance.
+    public static func appearance(of image: CGImage) -> GrabAppearance {
+      appearance(averageLuminance: averageLuminance(of: image))
+    }
 
-  /// The image's average Rec. 709 luminance, from 0 to 1, measured on a
-  /// 32×32 downsample; 0 if the image can't be drawn.
-  ///
-  /// - Parameter image: The capture.
-  /// - Returns: The luminance.
-  public static func averageLuminance(of image: CGImage) -> Double {
-    let side = sampleSide
-    var pixels = [UInt8](repeating: 0, count: side * side * 4)
-    let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
-      guard
-        let context = CGContext(
-          data: buffer.baseAddress,
-          width: side,
-          height: side,
-          bitsPerComponent: 8,
-          bytesPerRow: side * 4,
-          space: CGColorSpaceCreateDeviceRGB(),
-          bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
-        )
-      else {
-        return false
+    /// The image's average Rec. 709 luminance, from 0 to 1, measured on a
+    /// 32×32 downsample; 0 if the image can't be drawn.
+    ///
+    /// - Parameter image: The capture.
+    /// - Returns: The luminance.
+    public static func averageLuminance(of image: CGImage) -> Double {
+      let side = sampleSide
+      var pixels = [UInt8](repeating: 0, count: side * side * 4)
+      let drawn = pixels.withUnsafeMutableBytes { buffer -> Bool in
+        guard
+          let context = CGContext(
+            data: buffer.baseAddress,
+            width: side,
+            height: side,
+            bitsPerComponent: 8,
+            bytesPerRow: side * 4,
+            space: CGColorSpaceCreateDeviceRGB(),
+            bitmapInfo: CGImageAlphaInfo.noneSkipLast.rawValue
+          )
+        else {
+          return false
+        }
+        context.interpolationQuality = .medium
+        context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
+        return true
       }
-      context.interpolationQuality = .medium
-      context.draw(image, in: CGRect(x: 0, y: 0, width: side, height: side))
-      return true
+      guard drawn else {
+        return 0
+      }
+      return luminance(ofRGBX: pixels)
     }
-    guard drawn else {
-      return 0
-    }
-    return luminance(ofRGBX: pixels)
-  }
+  #endif
 
   /// The average Rec. 709 luminance (0 to 1) of 8-bit RGBX pixels.
   internal static func luminance(ofRGBX pixels: [UInt8]) -> Double {

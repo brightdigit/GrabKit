@@ -76,20 +76,26 @@ internal enum GrabExportCommand {
   }
 
   private static func runXcresulttool(bundle: URL, to folder: URL) throws {
-    let process = Process()
-    process.executableURL = URL(filePath: "/usr/bin/xcrun")
-    process.arguments = [
-      "xcresulttool", "export", "attachments",
-      "--path", bundle.path(percentEncoded: false),
-      "--output-path", folder.path(percentEncoded: false),
-    ]
-    // Its per-attachment listing is noise here; errors still reach stderr.
-    process.standardOutput = FileHandle.nullDevice
-    try process.run()
-    process.waitUntilExit()
-    guard process.terminationStatus == 0 else {
-      fail("xcresulttool exited with \(process.terminationStatus).")
-    }
+    // Process and xcresulttool: macOS (and Linux, so the command builds
+    // there), not the device platforms.
+    #if os(iOS) || os(tvOS) || os(watchOS) || os(visionOS)
+      fail("grab-export runs xcresulttool, which needs macOS.")
+    #else
+      let process = Process()
+      process.executableURL = URL(filePath: "/usr/bin/xcrun")
+      process.arguments = [
+        "xcresulttool", "export", "attachments",
+        "--path", bundle.path(percentEncoded: false),
+        "--output-path", folder.path(percentEncoded: false),
+      ]
+      // Its per-attachment listing is noise here; errors still reach stderr.
+      process.standardOutput = FileHandle.nullDevice
+      try process.run()
+      process.waitUntilExit()
+      guard process.terminationStatus == 0 else {
+        fail("xcresulttool exited with \(process.terminationStatus).")
+      }
+    #endif
   }
 
   private static func fail(_ message: String) -> Never {

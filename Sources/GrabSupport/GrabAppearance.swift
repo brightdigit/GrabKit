@@ -6,7 +6,11 @@
 //  Licensed under the MIT License. See LICENSE.
 //
 
-public import AppKit
+#if os(macOS)
+  public import AppKit
+#elseif canImport(UIKit) && !os(watchOS)
+  public import UIKit
+#endif
 
 /// The appearance a screenshot is taken in.
 ///
@@ -18,15 +22,28 @@ public enum GrabAppearance: String, CaseIterable, Sendable, Hashable {
   /// Dark Aqua.
   case dark
 
-  /// The AppKit appearance: `.aqua` or `.darkAqua`.
-  public var appearanceName: NSAppearance.Name {
-    switch self {
-    case .light:
-      .aqua
-    case .dark:
-      .darkAqua
+  #if os(macOS)
+    /// The AppKit appearance: `.aqua` or `.darkAqua`.
+    public var appearanceName: NSAppearance.Name {
+      switch self {
+      case .light:
+        .aqua
+      case .dark:
+        .darkAqua
+      }
     }
-  }
+  #elseif canImport(UIKit) && !os(watchOS)
+    /// The UIKit interface style: `.light` or `.dark`, for a window's
+    /// `overrideUserInterfaceStyle`.
+    public var userInterfaceStyle: UIUserInterfaceStyle {
+      switch self {
+      case .light:
+        .light
+      case .dark:
+        .dark
+      }
+    }
+  #endif
 
   /// The appearances listed in `value` ("light dark", "dark", "light,dark"),
   /// in order and without repeats, ignoring unknown names; every appearance
@@ -48,10 +65,21 @@ public enum GrabAppearance: String, CaseIterable, Sendable, Hashable {
     return result.isEmpty ? allCases : result
   }
 
-  /// Sets `NSApp.appearance`, before any window opens, so the app draws in
-  /// this appearance whatever the Mac's is.
-  @MainActor
-  public func apply() {
-    NSApplication.shared.appearance = NSAppearance(named: appearanceName)
-  }
+  #if os(macOS)
+    /// Sets `NSApp.appearance`, before any window opens, so the app draws in
+    /// this appearance whatever the Mac's is.
+    @MainActor
+    public func apply() {
+      NSApplication.shared.appearance = NSAppearance(named: appearanceName)
+    }
+  #elseif canImport(UIKit) && !os(watchOS)
+    /// Sets `window.overrideUserInterfaceStyle`, so the window draws in this
+    /// appearance whatever the device's is.
+    ///
+    /// - Parameter window: The window, usually as its scene connects.
+    @MainActor
+    public func apply(to window: UIWindow) {
+      window.overrideUserInterfaceStyle = userInterfaceStyle
+    }
+  #endif
 }

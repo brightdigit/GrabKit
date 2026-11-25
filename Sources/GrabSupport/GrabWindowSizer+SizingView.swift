@@ -6,68 +6,72 @@
 //  Licensed under the MIT License. See LICENSE.
 //
 
-public import AppKit
+// AppKit only: an iOS, tvOS, visionOS or watchOS window has no frame an app
+// sets, so there is no counterpart there.
+#if os(macOS)
+  public import AppKit
 
-extension GrabWindowSizer {
-  /// The view that sizes the window it joins.
-  public final class SizingView: NSView {
-    private static let retryDelays: [Duration] = [
-      .milliseconds(100), .milliseconds(500), .seconds(1),
-    ]
+  extension GrabWindowSizer {
+    /// The view that sizes the window it joins.
+    public final class SizingView: NSView {
+      private static let retryDelays: [Duration] = [
+        .milliseconds(100), .milliseconds(500), .seconds(1),
+      ]
 
-    private let contentSize: CGSize
+      private let contentSize: CGSize
 
-    internal init(contentSize: CGSize) {
-      self.contentSize = contentSize
-      super.init(frame: .zero)
-    }
-
-    @available(*, unavailable)
-    internal required init?(coder _: NSCoder) {
-      fatalError("init(coder:) is unavailable")
-    }
-
-    private static func stopAutosaving(in view: NSView) {
-      if let splitView = view as? NSSplitView, splitView.autosaveName != nil {
-        splitView.autosaveName = nil
+      internal init(contentSize: CGSize) {
+        self.contentSize = contentSize
+        super.init(frame: .zero)
       }
-      for subview in view.subviews {
-        stopAutosaving(in: subview)
-      }
-    }
 
-    /// Sizes the window it joins, then again after SwiftUI's late frame.
-    override public func viewDidMoveToWindow() {
-      super.viewDidMoveToWindow()
-      guard window != nil else {
-        return
+      @available(*, unavailable)
+      internal required init?(coder _: NSCoder) {
+        fatalError("init(coder:) is unavailable")
       }
-      resize()
-      Task { @MainActor [weak self] in
-        for delay in Self.retryDelays {
-          try? await Task.sleep(for: delay)
-          self?.resize()
+
+      private static func stopAutosaving(in view: NSView) {
+        if let splitView = view as? NSSplitView, splitView.autosaveName != nil {
+          splitView.autosaveName = nil
+        }
+        for subview in view.subviews {
+          stopAutosaving(in: subview)
         }
       }
-    }
 
-    private func resize() {
-      guard let window else {
-        return
+      /// Sizes the window it joins, then again after SwiftUI's late frame.
+      override public func viewDidMoveToWindow() {
+        super.viewDidMoveToWindow()
+        guard window != nil else {
+          return
+        }
+        resize()
+        Task { @MainActor [weak self] in
+          for delay in Self.retryDelays {
+            try? await Task.sleep(for: delay)
+            self?.resize()
+          }
+        }
       }
-      window.setFrameAutosaveName("")
-      if let contentView = window.contentView {
-        Self.stopAutosaving(in: contentView)
+
+      private func resize() {
+        guard let window else {
+          return
+        }
+        window.setFrameAutosaveName("")
+        if let contentView = window.contentView {
+          Self.stopAutosaving(in: contentView)
+        }
+        // One frame change for size and position. SwiftUI windows draw their
+        // content under the title bar, so the frame is the content size.
+        var frame = window.frameRect(
+          forContentRect: NSRect(origin: .zero, size: contentSize)
+        )
+        if let visible = (window.screen ?? NSScreen.main)?.visibleFrame {
+          frame.origin = NSPoint(x: visible.minX, y: visible.maxY - frame.height)
+        }
+        window.setFrame(frame, display: true)
       }
-      // One frame change for size and position. SwiftUI windows draw their
-      // content under the title bar, so the frame is the content size.
-      var frame = window.frameRect(
-        forContentRect: NSRect(origin: .zero, size: contentSize)
-      )
-      if let visible = (window.screen ?? NSScreen.main)?.visibleFrame {
-        frame.origin = NSPoint(x: visible.minX, y: visible.maxY - frame.height)
-      }
-      window.setFrame(frame, display: true)
     }
   }
-}
+#endif

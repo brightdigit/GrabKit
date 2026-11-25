@@ -106,7 +106,7 @@
         return
       }
       let original = Self.originalAppearance
-      XCUIDevice.shared.appearance = Self.deviceAppearance(first)
+      Self.setDeviceAppearance(Self.deviceAppearance(first))
       var images: [GrabImage] = []
       for (index, appearance) in appearances.enumerated() {
         let next =
@@ -155,7 +155,7 @@
       app.launch()
       defer { app.terminate() }
       // Runs before the terminate above, while the app is frontmost.
-      defer { XCUIDevice.shared.appearance = next }
+      defer { Self.setDeviceAppearance(next) }
       app.activate()
       let target = try screen.drive(app)
       let window = target.window

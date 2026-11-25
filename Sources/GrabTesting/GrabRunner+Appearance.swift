@@ -20,13 +20,26 @@
     /// Mac in Dark after a run, so then the global `AppleInterfaceStyle`
     /// default decides.
     internal static let originalAppearance: XCUIDevice.Appearance = {
-      let reported = XCUIDevice.shared.appearance
-      guard reported == .unspecified else {
-        return reported
-      }
-      let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
-      return style == "Dark" ? .dark : .light
+      #if os(watchOS)
+        // watchOS UI tests can't read or switch the watch's appearance.
+        return .unspecified
+      #else
+        let reported = XCUIDevice.shared.appearance
+        guard reported == .unspecified else {
+          return reported
+        }
+        let style = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
+        return style == "Dark" ? .dark : .light
+      #endif
     }()
+
+    /// Switches the device's appearance; does nothing on watchOS, whose UI
+    /// tests can't.
+    internal static func setDeviceAppearance(_ appearance: XCUIDevice.Appearance) {
+      #if !os(watchOS)
+        XCUIDevice.shared.appearance = appearance
+      #endif
+    }
 
     internal static func deviceAppearance(
       _ appearance: GrabAppearance
