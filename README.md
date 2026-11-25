@@ -1,12 +1,21 @@
 # GrabKit
 
-Automated website and App Store screenshots for macOS apps, from a UI test. Named after [Grab](https://en.wikipedia.org/wiki/Grab_(software)), the Mac's screenshot utility from NeXTSTEP until Mojave.
+Automated website and App Store screenshots for Apple-platform apps, from a UI test. Named after [Grab](https://en.wikipedia.org/wiki/Grab_(software)), the Mac's screenshot utility from NeXTSTEP until Mojave.
 
 - **GrabSupport**, the app side: launch arguments, light or dark appearance, a fail-closed launch decision, and a fixed window size.
 - **GrabTesting**, the UI test side: drive the app to a screen, capture the window (or a crop of the screen for menus and sheets), detect light or dark, name the shots, attach them.
 - **grab-export**: copies a run's shots out of its `.xcresult` as `NN-slug-light.png` and `NN-slug-dark.png`.
 
-Requires macOS 27 and Swift 6.4.
+Requires Swift 6.4 (Xcode 27.2, as CI uses). GrabKit declares macOS 27, iOS 16, watchOS 9, tvOS 16, visionOS 1 and Mac Catalyst 16, and builds on Linux too:
+
+| Platform | What's there |
+| --- | --- |
+| macOS | Everything: `GrabWindowSizer`, `GrabAppearance.apply()`, the XCUITest runner, `grab-export`. |
+| iOS, Mac Catalyst, tvOS, visionOS | `GrabAppearance.userInterfaceStyle` and `apply(to:)` for a `UIWindow` instead of AppKit's; no `GrabWindowSizer`. `parkPointer()` does nothing where there's no pointer (tvOS, visionOS). |
+| watchOS | As above, without the UIKit appearance API; the runner can't switch the watch's appearance. |
+| Linux | GrabSupport's launch arguments and decision (logged to stderr instead of OSLog), `GrabCrop`, `GrabNaming`, `GrabFixture` and GrabExportCore. No `GrabImage` (CoreGraphics and ImageIO) or XCUITest runner. |
+
+`grab-export` runs xcresulttool, so it only does its job on macOS; elsewhere it builds and exits with an error.
 
 ## The convention
 
@@ -22,7 +31,7 @@ The full convention, with the reasons and per-app notes, is the `mac-app-screens
 Add GrabKit to the app's package as a URL dependency:
 
 ```swift
-.package(url: "https://github.com/brightdigit/GrabKit.git", branch: "main"),
+.package(url: "https://github.com/brightdigit/GrabKit.git", from: "1.0.0-alpha.1"),
 ```
 
 Link `GrabSupport` from the app's demo target and `GrabTesting` from the screenshot UI tests' library.
