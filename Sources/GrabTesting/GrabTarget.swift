@@ -22,11 +22,13 @@
     /// When there are any, the shot is cut from a screen capture around the
     /// union of their frames and the window's, instead.
     public let extras: [XCUIElement]
-    /// Whether to cut the shot from a screen capture around the window (and
-    /// any ``extras``) instead of taking the window's own screenshot: `true`
-    /// for a context menu that opens over the window, which the window's
-    /// screenshot misses and whose own frame can run to the bottom of the
-    /// screen. Always `true` when there are ``extras``.
+    /// Whether the shot is cut from a screen capture instead of the window's
+    /// own screenshot.
+    ///
+    /// `true` for a context menu that opens over the window, which the
+    /// window's screenshot misses and whose own frame can run to the bottom
+    /// of the screen: the capture is cropped to the window (and any
+    /// ``extras``). Always `true` when there are ``extras``.
     public let capturesScreen: Bool
     /// Whether the window should have the runner's `windowSize`: `false`
     /// for a window the app doesn't size, such as an About panel or an
