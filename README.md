@@ -76,6 +76,8 @@ Export, from the package that depends on GrabKit (SwiftPM builds `grab-export` f
 swift run --package-path Packages/MyApp -c release grab-export build/screenshots.xcresult build/screenshots
 ```
 
+It empties the output folder first. With `--keep-others` it replaces only the files the run exports and leaves the rest, so a run of one appearance keeps the other appearance's shots from an earlier run.
+
 ## Development
 
 ```sh

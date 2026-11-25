@@ -9,32 +9,40 @@
 import Foundation
 import GrabExportCore
 
-/// `grab-export <result bundle> <output folder>`: exports a screenshot
-/// run's PNG attachments into a folder, named by the names the runner gave
-/// them (`01-editor-light.png`).
+/// `grab-export [--keep-others] <result bundle> <output folder>`: exports a
+/// screenshot run's PNG attachments into a folder, named by the names the
+/// runner gave them (`01-editor-light.png`).
 ///
-/// The output folder is emptied first. Exits non-zero when the bundle is
-/// missing or xcresulttool fails.
+/// The output folder is emptied first, unless `--keep-others` is given:
+/// then only the files this run exports are replaced, so a one-appearance
+/// run keeps the other appearance's shots. Exits non-zero when the bundle
+/// is missing or xcresulttool fails.
 @main
 internal enum GrabExportCommand {
-  private static let usage = "Usage: grab-export <result bundle> <output folder>"
-
   internal static func main() {
     let arguments = Array(CommandLine.arguments.dropFirst())
-    guard arguments.count == 2 else {
-      fail(usage)
+    guard let options = GrabExportOptions(arguments: arguments) else {
+      fail(GrabExportOptions.usage)
     }
-    let bundle = URL(filePath: arguments[0])
-    let output = URL(filePath: arguments[1])
+    let bundle = URL(filePath: options.bundlePath)
+    let output = URL(filePath: options.outputPath)
     do {
-      let count = try export(bundle: bundle, to: output)
+      let count = try export(
+        bundle: bundle,
+        to: output,
+        keepingOthers: options.keepsOthers
+      )
       print("Exported \(count) screenshots to \(output.path(percentEncoded: false))")
     } catch {
       fail("grab-export: \(error)")
     }
   }
 
-  private static func export(bundle: URL, to output: URL) throws -> Int {
+  private static func export(
+    bundle: URL,
+    to output: URL,
+    keepingOthers keepsOthers: Bool
+  ) throws -> Int {
     let files = FileManager.default
     guard files.fileExists(atPath: bundle.path(percentEncoded: false)) else {
       fail("No result bundle at \(bundle.path(percentEncoded: false)).")
@@ -46,14 +54,18 @@ internal enum GrabExportCommand {
     let plan = try GrabExportPlan(
       manifest: Data(contentsOf: staging.appending(path: "manifest.json"))
     )
-    if files.fileExists(atPath: output.path(percentEncoded: false)) {
+    if !keepsOthers, files.fileExists(atPath: output.path(percentEncoded: false)) {
       try files.removeItem(at: output)
     }
     try files.createDirectory(at: output, withIntermediateDirectories: true)
     for copy in plan.copies {
+      let destination = output.appending(path: copy.destination)
+      if files.fileExists(atPath: destination.path(percentEncoded: false)) {
+        try files.removeItem(at: destination)
+      }
       try files.copyItem(
         at: staging.appending(path: copy.source),
-        to: output.appending(path: copy.destination)
+        to: destination
       )
       print(copy.destination)
     }
