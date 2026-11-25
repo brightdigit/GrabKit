@@ -59,7 +59,7 @@
         pngData: window.screenshot().pngRepresentation,
         pointWidth: window.frame.width
       )
-      guard !target.extras.isEmpty else {
+      guard target.capturesScreen else {
         return shot
       }
       // A screen capture's image is in pixels; the window's capture gives

@@ -22,6 +22,12 @@
     /// When there are any, the shot is cut from a screen capture around the
     /// union of their frames and the window's, instead.
     public let extras: [XCUIElement]
+    /// Whether to cut the shot from a screen capture around the window (and
+    /// any ``extras``) instead of taking the window's own screenshot: `true`
+    /// for a context menu that opens over the window, which the window's
+    /// screenshot misses and whose own frame can run to the bottom of the
+    /// screen. Always `true` when there are ``extras``.
+    public let capturesScreen: Bool
     /// Whether the window should have the runner's `windowSize`: `false`
     /// for a window the app doesn't size, such as an About panel or an
     /// alert.
@@ -36,17 +42,21 @@
     /// - Parameters:
     ///   - window: The window to capture.
     ///   - extras: Elements outside it to include.
+    ///   - capturesScreen: Whether to crop a screen capture to the window
+    ///     even with no `extras`, for a context menu over it.
     ///   - checksWindowSize: Whether the window should have the runner's
     ///     `windowSize`.
     ///   - parksPointer: Whether to move the pointer off the window first.
     public init(
       window: XCUIElement,
       extras: [XCUIElement] = [],
+      capturesScreen: Bool = false,
       checksWindowSize: Bool = true,
       parksPointer: Bool = true
     ) {
       self.window = window
       self.extras = extras
+      self.capturesScreen = capturesScreen || !extras.isEmpty
       self.checksWindowSize = checksWindowSize
       self.parksPointer = parksPointer
     }
