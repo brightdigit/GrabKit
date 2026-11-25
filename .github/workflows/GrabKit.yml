@@ -1,31 +1,62 @@
 name: GrabKit
-
-# Pull requests only: a PR's commits never run twice.
+# Pull requests only: a push to a PR branch already triggers `pull_request`,
+# so a `push` trigger would run every commit twice. Use "Run workflow" for a
+# branch without a PR.
 on:
   pull_request:
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - 'LICENSE'
+      - '.github/ISSUE_TEMPLATE/**'
+  workflow_dispatch:
 
 concurrency:
-  group: ${{ github.workflow }}-${{ github.ref }}
+  group: ${{ github.workflow }}-${{ github.head_ref || github.ref }}
   cancel-in-progress: true
 
+env:
+  PACKAGE_NAME: GrabKit
+
 jobs:
-  test:
-    name: swift test
-    # GitHub's Xcode 27 image (macOS 27, arm64).
+  # GrabKit is macOS only (AppKit and XCTest UI testing), so there's no Linux,
+  # iOS or other platform lane. A swift-tools-version: 6.4 manifest needs Swift
+  # 6.4, so it runs on the xcode-27 image with Xcode 27.2 pinned.
+  build-macos:
+    name: Build on macOS
     runs-on: xcode-27
     steps:
       - uses: actions/checkout@v6
-      - name: Toolchain
-        run: xcodebuild -version && swift --version
-      - name: swift test
-        run: swift test
+      - name: Build and Test
+        id: build
+        uses: brightdigit/swift-build@v1
+        with:
+          xcode: "/Applications/Xcode_27.2.app"
+
+  # Builds the GrabSupport and GrabTesting DocC catalogs with
+  # --warnings-as-errors, so an unresolved symbol link fails the PR.
+  docs:
+    name: Documentation
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@v6
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
+      - name: Build DocC
+        run: ./Scripts/docc.sh
 
   lint:
     name: Lint
     runs-on: xcode-27
+    if: ${{ !cancelled() && !failure() }}
+    needs: [build-macos]
     steps:
       - uses: actions/checkout@v6
+      - name: Select Xcode
+        run: sudo xcode-select -s /Applications/Xcode_27.2.app/Contents/Developer
       - uses: jdx/mise-action@v4
+        with:
+          cache: true
       - name: Lint
         run: ./Scripts/lint.sh
         env:

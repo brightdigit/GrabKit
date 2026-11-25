@@ -21,7 +21,7 @@
     var baseName: String { get }
 
     /// The launch arguments for one capture in `appearance`, usually
-    /// ``GrabLaunchArguments/launchArguments(appearance:extra:)``.
+    /// `GrabLaunchArguments.launchArguments(appearance:extra:)`.
     ///
     /// - Parameter appearance: The appearance to launch in.
     /// - Returns: The arguments.

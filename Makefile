@@ -2,13 +2,14 @@
 #
 # Tools are pinned in .mise.toml and run through `mise exec`.
 
-.PHONY: help test lint export
+.PHONY: help test lint docs export
 
 help:
 	@echo "GrabKit Development Commands"
 	@echo ""
 	@echo "  make test    - swift test"
 	@echo "  make lint    - Format, fix and lint (Scripts/lint.sh). CI=1 lints without rewriting"
+	@echo "  make docs    - Build the GrabSupport and GrabTesting DocC catalogs (Scripts/docc.sh)"
 	@echo "  make export RESULT=<.xcresult> OUTPUT=<folder>"
 	@echo "               - Export a run's screenshots with grab-export"
 
@@ -17,6 +18,9 @@ test:
 
 lint:
 	./Scripts/lint.sh
+
+docs:
+	./Scripts/docc.sh
 
 export:
 	swift run -c release grab-export "$(RESULT)" "$(OUTPUT)"

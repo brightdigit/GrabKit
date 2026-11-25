@@ -31,7 +31,7 @@
     ///
     /// - Parameters:
     ///   - launchArguments: The app's screenshot arguments; the appearances
-    ///     come from their ``GrabLaunchArguments/appearancesEnvironmentKey``.
+    ///     come from their `GrabLaunchArguments.appearancesEnvironmentKey`.
     ///   - windowSize: The window's expected size in points, or `nil`.
     public init(launchArguments: GrabLaunchArguments, windowSize: CGSize? = nil) {
       let value = ProcessInfo.processInfo.environment[
