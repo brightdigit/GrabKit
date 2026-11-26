@@ -1,0 +1,10 @@
+# mise configuration for GrabKit
+# Documentation: https://mise.jdx.dev/configuration.html
+
+[tools]
+swiftlint = "0.65.1"                      # Swift style and conventions checking
+"spm:swiftlang/swift-format" = "604.0.0"  # Apple's Swift code formatting
+
+# Enable experimental features (required for spm backend)
+[settings]
+experimental = true
